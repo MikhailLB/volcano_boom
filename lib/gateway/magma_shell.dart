@@ -49,7 +49,7 @@ class _MagmaShellState extends State<MagmaShell>
   String? _lastMainFrame;
   String? _lastGoodUrl;
   int _redirectRetries = 0;
-  int _mainFrameFailures = 0;
+  bool _errorPageReloadTried = false;
   Timer? _retryTimer;
   StreamSubscription<List<ConnectivityResult>>? _linkSub;
 
@@ -79,12 +79,19 @@ class _MagmaShellState extends State<MagmaShell>
         onPageFinished: (url) {
           if (mounted) setState(() => _busy = false);
           _redirectRetries = 0;
-          if (url.isNotEmpty &&
-              !url.startsWith('about:') &&
-              !url.startsWith('chrome-error:') &&
-              !url.startsWith('data:')) {
+          if (url.startsWith('chrome-error:') ||
+              url.startsWith('data:text/html,chromewebdata')) {
+            // The WebView landed on its built-in error page — definitive
+            // load failure. Recovery happens here (not in onWebResourceError)
+            // because that callback also fires on transient errors during
+            // legitimate redirect chains, and reloading there throttles us
+            // straight into Cloudflare's rate limiter.
+            _handleErrorPage();
+            return;
+          }
+          if (url.isNotEmpty && !url.startsWith('about:') && !url.startsWith('data:')) {
             _lastGoodUrl = url;
-            _mainFrameFailures = 0;
+            _errorPageReloadTried = false;
           }
           _injectSafeAreaReset();
           _injectKeyboardScroll();
@@ -103,7 +110,10 @@ class _MagmaShellState extends State<MagmaShell>
             _view.loadRequest(Uri.parse(_lastMainFrame!));
             return;
           }
-          _handleMainFrameFailure();
+          // For every other main-frame error we let the WebView decide
+          // (it usually navigates to chrome-error://). The connectivity
+          // stream subscription below still fires _maybeOffline() when
+          // the OS reports a hard network drop.
         },
         onNavigationRequest: (req) {
           final u = Uri.tryParse(req.url);
@@ -132,33 +142,26 @@ class _MagmaShellState extends State<MagmaShell>
     });
   }
 
-  /// Main-frame load failed. Three cases:
-  ///   1. We're offline → fall through to OfflineCalderaScreen.
-  ///   2. We have internet but the partner host can't be reached yet (DNS
-  ///      race right after reconnect) → retry the load up to 3 times with
-  ///      growing delay.
-  ///   3. Internet is reachable but the host keeps failing → eventually
-  ///      surface OfflineCalderaScreen anyway so the user isn't stuck on
-  ///      the WebView's built-in error page.
-  Future<void> _handleMainFrameFailure() async {
+  /// The WebView reached its built-in chrome-error page. We try a single
+  /// gentle reload (in case the failure was a DNS race right after the
+  /// network came back), then bounce to the offline screen if that also
+  /// fails.
+  Future<void> _handleErrorPage() async {
     if (_routedAway) return;
     final reachable = await widget.link.hasReachableInternet();
     if (!reachable) {
       _maybeOffline();
       return;
     }
-
-    if (_mainFrameFailures >= 3) {
+    if (_errorPageReloadTried) {
       _maybeOffline();
       return;
     }
-
-    _mainFrameFailures++;
-    final delayMs = 600 + _mainFrameFailures * 600;
+    _errorPageReloadTried = true;
     final target = _lastGoodUrl ?? widget.url;
     if (mounted) setState(() => _busy = true);
     _retryTimer?.cancel();
-    _retryTimer = Timer(Duration(milliseconds: delayMs), () {
+    _retryTimer = Timer(const Duration(milliseconds: 1500), () {
       if (!mounted || _routedAway) return;
       _view.loadRequest(Uri.parse(target));
     });
