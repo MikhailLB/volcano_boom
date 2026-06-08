@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../runtime/link_probe.dart';
@@ -23,6 +25,9 @@ class _OfflineCalderaScreenState extends State<OfflineCalderaScreen>
   late final AnimationController _emberCtrl;
   late final Animation<double> _emberAnim;
 
+  String? _topBanner;
+  Timer? _bannerTimer;
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +42,17 @@ class _OfflineCalderaScreenState extends State<OfflineCalderaScreen>
 
   @override
   void dispose() {
+    _bannerTimer?.cancel();
     _emberCtrl.dispose();
     super.dispose();
+  }
+
+  void _showBanner(String message) {
+    _bannerTimer?.cancel();
+    setState(() => _topBanner = message);
+    _bannerTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _topBanner = null);
+    });
   }
 
   Future<void> _retry() async {
@@ -53,16 +67,7 @@ class _OfflineCalderaScreenState extends State<OfflineCalderaScreen>
       if (!online) {
         if (!mounted) return;
         setState(() => _busy = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            duration: Duration(seconds: 2),
-            backgroundColor: Color(0xFF2B0B05),
-            content: Text(
-              'Still no connection. Check Wi-Fi or mobile data.',
-              style: TextStyle(color: Color(0xFFFFE0B2)),
-            ),
-          ),
-        );
+        _showBanner('Still no connection. Check Wi-Fi or mobile data.');
         return;
       }
     } else {
@@ -124,6 +129,62 @@ class _OfflineCalderaScreenState extends State<OfflineCalderaScreen>
                 busy: _busy,
                 compact: landscape,
                 onTap: _retry,
+              ),
+            ),
+          ),
+          // Inline status banner — pinned to the very top so it never hides
+          // the retry button (landscape layouts had the SnackBar overlapping).
+          Positioned(
+            top: MediaQuery.of(context).viewPadding.top + 12,
+            left: 16,
+            right: 16,
+            child: IgnorePointer(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: _topBanner == null
+                    ? const SizedBox.shrink()
+                    : Container(
+                        key: ValueKey(_topBanner),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2B0B05).withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFFF8A50).withValues(alpha: 0.4),
+                            width: 1.2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black54,
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.wifi_off_rounded,
+                              size: 18,
+                              color: Color(0xFFFFE0B2),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _topBanner!,
+                                style: const TextStyle(
+                                  color: Color(0xFFFFE0B2),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
           ),

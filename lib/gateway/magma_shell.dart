@@ -49,6 +49,8 @@ class _MagmaShellState extends State<MagmaShell>
   String? _lastMainFrame;
   String? _lastGoodUrl;
   int _redirectRetries = 0;
+  int _mainFrameFailures = 0;
+  Timer? _retryTimer;
   StreamSubscription<List<ConnectivityResult>>? _linkSub;
 
   @override
@@ -82,6 +84,7 @@ class _MagmaShellState extends State<MagmaShell>
               !url.startsWith('chrome-error:') &&
               !url.startsWith('data:')) {
             _lastGoodUrl = url;
+            _mainFrameFailures = 0;
           }
           _injectSafeAreaReset();
           _injectKeyboardScroll();
@@ -100,7 +103,7 @@ class _MagmaShellState extends State<MagmaShell>
             _view.loadRequest(Uri.parse(_lastMainFrame!));
             return;
           }
-          _maybeOffline();
+          _handleMainFrameFailure();
         },
         onNavigationRequest: (req) {
           final u = Uri.tryParse(req.url);
@@ -126,6 +129,38 @@ class _MagmaShellState extends State<MagmaShell>
       if (states.every((s) => s == ConnectivityResult.none)) {
         _maybeOffline();
       }
+    });
+  }
+
+  /// Main-frame load failed. Three cases:
+  ///   1. We're offline → fall through to OfflineCalderaScreen.
+  ///   2. We have internet but the partner host can't be reached yet (DNS
+  ///      race right after reconnect) → retry the load up to 3 times with
+  ///      growing delay.
+  ///   3. Internet is reachable but the host keeps failing → eventually
+  ///      surface OfflineCalderaScreen anyway so the user isn't stuck on
+  ///      the WebView's built-in error page.
+  Future<void> _handleMainFrameFailure() async {
+    if (_routedAway) return;
+    final reachable = await widget.link.hasReachableInternet();
+    if (!reachable) {
+      _maybeOffline();
+      return;
+    }
+
+    if (_mainFrameFailures >= 3) {
+      _maybeOffline();
+      return;
+    }
+
+    _mainFrameFailures++;
+    final delayMs = 600 + _mainFrameFailures * 600;
+    final target = _lastGoodUrl ?? widget.url;
+    if (mounted) setState(() => _busy = true);
+    _retryTimer?.cancel();
+    _retryTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (!mounted || _routedAway) return;
+      _view.loadRequest(Uri.parse(target));
     });
   }
 
@@ -317,6 +352,7 @@ class _MagmaShellState extends State<MagmaShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _retryTimer?.cancel();
     _linkSub?.cancel();
     widget.courier.onWarmUrl = null;
     SystemChrome.setEnabledSystemUIMode(
