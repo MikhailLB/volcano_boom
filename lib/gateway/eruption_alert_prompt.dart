@@ -206,13 +206,13 @@ class _EmberAcceptState extends State<_EmberAccept>
                 ],
               ),
               child: Text(
-                'IGNITE ALERTS',
+                'Accept',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: const Color(0xFFFFF8E1),
-                  fontSize: widget.compact ? 15 : 19,
+                  fontSize: widget.compact ? 16 : 21,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.8,
+                  letterSpacing: 1.4,
                   shadows: const [
                     Shadow(
                       color: Color(0xFF3E0A00),
@@ -256,16 +256,13 @@ class _AshDeclineState extends State<_AshDecline> {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: widget.compact ? 4 : 6),
           child: Text(
-            'Maybe later',
+            'Skip',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: const Color(0xFFE0D2C2),
-              fontSize: widget.compact ? 14 : 16,
-              fontWeight: FontWeight.w600,
+              fontSize: widget.compact ? 15 : 18,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
-              decoration: TextDecoration.underline,
-              decorationColor: const Color(0xFFE0D2C2).withValues(alpha: 0.5),
-              decorationThickness: 1.2,
               shadows: const [
                 Shadow(
                   color: Colors.black87,

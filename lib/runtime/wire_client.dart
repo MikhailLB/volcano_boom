@@ -33,10 +33,13 @@ class WireClient extends http.BaseClient {
         final a = await probe.androidInfo;
         final sdk = a.version.sdkInt;
         final build = a.display.isNotEmpty ? a.display : a.id;
-        final chrome = _chromeFragment.isNotEmpty ? _chromeFragment : '129.0.0.0';
+        final chrome =
+            _chromeFragment.isNotEmpty ? _chromeFragment : '129.0.0.0';
+        // No "wv" marker, no "Version/" segment — this mimics the standalone
+        // Chrome browser UA, not the Android WebView UA.
         _agent = 'Mozilla/5.0 (Linux; Android $sdk; ${a.brand} ${a.model} '
-            'Build/$build; wv) AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Version/4.0 Chrome/$chrome Mobile Safari/537.36';
+            'Build/$build) AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/$chrome Mobile Safari/537.36';
       } else {
         final i = await probe.iosInfo;
         final ver = i.systemVersion.replaceAll('.', '_');
@@ -46,7 +49,8 @@ class WireClient extends http.BaseClient {
             'Mobile/15E148 Safari/$wk';
       }
     } catch (_) {
-      final chrome = _chromeFragment.isNotEmpty ? _chromeFragment : '129.0.0.0';
+      final chrome =
+          _chromeFragment.isNotEmpty ? _chromeFragment : '129.0.0.0';
       _agent = Platform.isAndroid
           ? 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 '
               '(KHTML, like Gecko) Chrome/$chrome Mobile Safari/537.36'

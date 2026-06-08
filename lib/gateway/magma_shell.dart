@@ -47,6 +47,7 @@ class _MagmaShellState extends State<MagmaShell>
   bool _busy = true;
   bool _routedAway = false;
   String? _lastMainFrame;
+  String? _lastGoodUrl;
   int _redirectRetries = 0;
   StreamSubscription<List<ConnectivityResult>>? _linkSub;
 
@@ -73,9 +74,15 @@ class _MagmaShellState extends State<MagmaShell>
         onPageStarted: (_) {
           if (mounted) setState(() => _busy = true);
         },
-        onPageFinished: (_) {
+        onPageFinished: (url) {
           if (mounted) setState(() => _busy = false);
           _redirectRetries = 0;
+          if (url.isNotEmpty &&
+              !url.startsWith('about:') &&
+              !url.startsWith('chrome-error:') &&
+              !url.startsWith('data:')) {
+            _lastGoodUrl = url;
+          }
           _injectSafeAreaReset();
           _injectKeyboardScroll();
         },
@@ -174,13 +181,18 @@ class _MagmaShellState extends State<MagmaShell>
     final reachable = await widget.link.hasReachableInternet();
     if (reachable || !mounted) return;
     _routedAway = true;
-    final current = await _view.currentUrl() ?? widget.url;
+
+    // Prefer the last fully-loaded URL; only fall back to the original
+    // partner URL. Never use currentUrl() blindly — when an error page is
+    // displayed it returns `chrome-error://` which would hang the next load.
+    final resume = _lastGoodUrl ?? widget.url;
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => OfflineCalderaScreen(
+          link: widget.link,
           retryBuilder: (_) => MagmaShell(
-            url: current,
+            url: resume,
             vault: widget.vault,
             courier: widget.courier,
             link: widget.link,

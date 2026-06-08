@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../runtime/link_probe.dart';
+
 /// Offline screen. Two orientation-aware static backgrounds + a stone/lava
 /// retry button anchored at the bottom.
 class OfflineCalderaScreen extends StatefulWidget {
   final WidgetBuilder retryBuilder;
-  const OfflineCalderaScreen({super.key, required this.retryBuilder});
+  final LinkProbe? link;
+  const OfflineCalderaScreen({
+    super.key,
+    required this.retryBuilder,
+    this.link,
+  });
 
   @override
   State<OfflineCalderaScreen> createState() => _OfflineCalderaScreenState();
@@ -37,7 +44,31 @@ class _OfflineCalderaScreenState extends State<OfflineCalderaScreen>
   Future<void> _retry() async {
     if (_busy) return;
     setState(() => _busy = true);
-    await Future.delayed(const Duration(milliseconds: 750));
+
+    // If we have a LinkProbe, verify connectivity before navigating away.
+    // Without this, tapping Retry while still offline immediately rebuilds
+    // the WebView screen which then hangs on a black "loading" frame.
+    if (widget.link != null) {
+      final online = await widget.link!.hasReachableInternet();
+      if (!online) {
+        if (!mounted) return;
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            duration: Duration(seconds: 2),
+            backgroundColor: Color(0xFF2B0B05),
+            content: Text(
+              'Still no connection. Check Wi-Fi or mobile data.',
+              style: TextStyle(color: Color(0xFFFFE0B2)),
+            ),
+          ),
+        );
+        return;
+      }
+    } else {
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: widget.retryBuilder),

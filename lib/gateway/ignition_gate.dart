@@ -241,6 +241,7 @@ class _IgnitionGateState extends State<IgnitionGate>
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => OfflineCalderaScreen(
+          link: widget.link,
           retryBuilder: (_) => IgnitionGate(
             vault: widget.vault,
             link: widget.link,
