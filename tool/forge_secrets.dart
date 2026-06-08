@@ -1,10 +1,15 @@
 // Run with: dart run tool/forge_secrets.dart
 //
 // Outputs scrambled byte arrays for every secret listed below. Paste the
-// arrays into the matching slots in lib/env/*.dart.
+// arrays into the matching slots in lib/env/*.dart and
+// lib/runtime/wire_client.dart.
 //
 // NEVER use a PowerShell foreach loop to do this on Windows: PowerShell
 // silently overflows 32-bit integers and you get the wrong bytes.
+//
+// SECURITY: This file lives outside lib/ and is never compiled into the
+// shipping APK. Even so, prefer to keep the plaintext placeholders below
+// — fill them in only while regenerating arrays, then revert.
 
 // ignore_for_file: avoid_print, avoid_relative_lib_imports
 
@@ -31,7 +36,9 @@ void main() {
 
   for (final entry in secrets.entries) {
     final bytes = wrap(entry.value);
-    final list = bytes.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(', ');
+    final list = bytes
+        .map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}')
+        .join(', ');
     print('-- ${entry.key} (${entry.value}) --');
     print('const v = <int>[$list];');
     print('');

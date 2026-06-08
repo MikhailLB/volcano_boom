@@ -12,11 +12,15 @@ import '../forge/cipher.dart';
 // Regenerate the byte arrays via tool/forge_secrets.dart after changing the
 // cipher ember.
 
-// Scrambled Chrome major-version string (e.g. "129.0.6668.99").
-String get _chromeFragment => unwrap(const <int>[]);
+// Scrambled Chrome major-version string ("129.0.0.0").
+String get _chromeFragment => unwrap(const <int>[
+      0x90, 0x27, 0x0a, 0x29, 0x5f, 0x54, 0x90, 0xb6, 0x53,
+    ]);
 
-// Scrambled WebKit version (e.g. "537.36"). iOS Safari path only.
-String get _webkitFragment => unwrap(const <int>[]);
+// Scrambled WebKit version ("537.36"). iOS Safari path only.
+String get _webkitFragment => unwrap(const <int>[
+      0x94, 0x28, 0x08, 0x29, 0x5c, 0x5c,
+    ]);
 
 class WireClient extends http.BaseClient {
   final http.Client _delegate = http.Client();

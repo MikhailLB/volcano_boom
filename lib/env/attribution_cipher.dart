@@ -2,19 +2,30 @@ import '../forge/cipher.dart';
 
 // Scrambled attribution credentials.
 //
-// Fill in tool/forge_secrets.dart, run it, then paste the printed
-// byte arrays into the lists below.
+// Regenerate after changing the cipher ember:
+//   1. Fill the plain values in tool/forge_secrets.dart
+//   2. Run: dart run tool/forge_secrets.dart
+//   3. Replace the byte arrays below with the printed output.
 
 /// Decoded AppsFlyer Dev Key.
 String resolveTrackerKey() {
-  const v = <int>[];
+  // dfaWqFS2qgYity99wXNGjE
+  const v = <int>[
+    0xc5, 0x73, 0x52, 0x62, 0x1e, 0x2c, 0xef, 0xba,
+    0x12, 0xb7, 0x73, 0x57, 0x38, 0xe4, 0x7b, 0x95,
+    0xe5, 0x90, 0x42, 0x9b, 0x1d, 0x03,
+  ];
   if (v.isEmpty) return '';
   return unwrap(v);
 }
 
 /// Decoded Firebase project number (sender id).
 String resolveCourierProject() {
-  const v = <int>[];
+  // 706618020259
+  const v = <int>[
+    0x96, 0x25, 0x09, 0x41, 0x5e, 0x5e, 0x90, 0xba,
+    0x53, 0x04, 0x0f, 0x27,
+  ];
   if (v.isEmpty) return '';
   return unwrap(v);
 }
@@ -22,8 +33,19 @@ String resolveCourierProject() {
 /// Assemble the GCD (Get Conversion Data) URL.
 /// Format: https://gcdsdk.appsflyer.com/install_data/v4.0/{appId}?device_id={deviceId}
 String resolveGcdEndpoint(String appId, String deviceId) {
-  const host = <int>[];
-  const path = <int>[];
+  // https://gcdsdk.appsflyer.com
+  const host = <int>[
+    0xc9, 0x61, 0x47, 0x7b, 0x1c, 0x60, 0x9b, 0xb5,
+    0x24, 0xb3, 0x5e, 0x61, 0x48, 0xd2, 0x88, 0xed,
+    0xe2, 0x68, 0x1f, 0xbc, 0x23, 0xe7, 0xf8, 0xed,
+    0xa7, 0x90, 0x78, 0x80,
+  ];
+  // /install_data/v4.0
+  const path = <int>[
+    0x8e, 0x7e, 0x61, 0x7e, 0x23, 0x05, 0xdc, 0xf4,
+    0x2c, 0xb6, 0x5b, 0x5c, 0x45, 0x8e, 0x30, 0x9a,
+    0x9c, 0x28,
+  ];
   if (host.isEmpty) return '';
   return '${unwrap(host)}${unwrap(path)}?app_id=$appId&device_id=$deviceId';
 }

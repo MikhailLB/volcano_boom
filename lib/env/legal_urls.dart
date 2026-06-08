@@ -4,6 +4,6 @@
 // plaintext: they're shown on a settings/legal page that store reviewers
 // inspect, so they must be human-readable.
 
-const String privacyHubUrl = 'https://volcanoboom.app/privacy.html';
-const String termsHubUrl = 'https://volcanoboom.app/terms.html';
-const String supportHubUrl = 'https://volcanoboom.app/support.html';
+const String privacyHubUrl = 'https://vollcanoboom.com/privacy-policy.html';
+const String termsHubUrl = 'https://vollcanoboom.com/privacy-policy.html';
+const String supportHubUrl = 'https://vollcanoboom.com/support.html';
