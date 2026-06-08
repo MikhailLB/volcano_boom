@@ -19,3 +19,9 @@
 # Kotlin reflection used by some firebase modules
 -keep class kotlin.Metadata { *; }
 -dontwarn kotlin.**
+
+# Play Core (deferred components) — not used, suppress R8 missing-class errors
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+-keep class io.flutter.embedding.android.FlutterPlayStoreSplitApplication { *; }
+-keep class io.flutter.embedding.engine.deferredcomponents.** { *; }

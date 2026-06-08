@@ -2,7 +2,7 @@ name: volcano_boom
 description: "Volcano Boom - tap to erupt, collect volcanoes and cause the biggest boom."
 publish_to: 'none'
 
-version: 1.0.3+4
+version: 1.0.1+2
 
 environment:
   sdk: ^3.11.4
